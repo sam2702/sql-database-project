@@ -5,9 +5,9 @@
             *******************************
 
 EXEC dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment;
-EXEC sp_AggregateFeedbacks_By_MetadataAndSentiment @Product = 'mobile';
-EXEC sp_AggregateFeedbacks_By_MetadataAndSentiment @Sentiment = 'Positive';
-EXEC sp_AggregateFeedbacks_By_MetadataAndSentiment @Product = 'mobile', @Sentiment = 'Negative';
+EXEC dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment @Product = 'mobile';
+EXEC dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment @Sentiment = 'Positive';
+EXEC dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment @Product = 'mobile', @Sentiment = 'Negative';
 
 */
 

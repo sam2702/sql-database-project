@@ -108,6 +108,44 @@ flowchart TD
     G --> H[Return Result Set]
     H --> I[Drop Temp Table]
     I --> J[End]
+```
+### Import feedback data from CSV/JSON into the database
+```mermaid
+erDiagram
+    Staging_Feedbacks {
+        int CustomerID
+        string FeedbackText
+        int Rating
+        datetime CreatedDate
+        string Metadata
+    }
+
+    Feedbacks {
+        int FeedbackID PK
+        int CustomerID
+        string FeedbackText
+        int Rating
+        datetime CreatedDate
+        string Metadata
+    }
+
+    Staging_Feedbacks ||--o{ Feedbacks : deduplicated_merge
+```
+### PowerShell ETL Flowchart
+```mermaid
+flowchart TD
+    A[Start ETL Script] --> B[Set Configuration Variables]
+    B --> C[Load CSV file]
+    C --> D{Is data loaded?}
+    D -- No --> X[Log: No data found, Exit]
+    D -- Yes --> E[Open SQL DB Connection]
+    E --> F[Loop over each row]
+    F --> G[Insert into Staging_Feedbacks]
+    G --> H[Log total rows inserted]
+    H --> I[Merge Staging_Feedbacks into Feedbacks -deduplication]
+    I --> J[Log inserted count]
+    J --> K[Truncate Staging_Feedbacks]
+    K --> Z[Close DB Connection, End]
 
 ```
 ### Indexing Strategy

@@ -1,6 +1,5 @@
 # Customer Feedback Analysis Project (SQL-Based)
-This project is designed to analyze customer feedback data using T-SQL in a structured, index-optimized SQL Server environment. 
-It demonstrates expertise in query performance, JSON data parsing, sentiment classification, and aggregation techniques for business insights.
+Analyze customer feedback using T-SQL with fast queries, smart JSON parsing, and sentiment tagging all in a performance-tuned SQL Server setup.
 
 ## 📂 Project Structure 
 
@@ -30,4 +29,52 @@ sql-database-project/
 └── README.md
 
 ```
+## 📊 Features
 
+- Load and analyze customer feedback records
+- Extract sentiment from feedback text (positive/negative classification)
+- Parse and aggregate JSON fields (e.g., `device`, `location`)
+- Use dynamic SQL for flexible analysis
+- Optimize queries with smart indexing strategies
+- Integrate with [Brent Ozar’s](https://www.brentozar.com/) tools like `sp_BlitzIndex` and `sp_BlitzCache` for performance tuning.
+
+## Sample Analysis
+
+### Sentiment Classification
+
+```sql
+CASE
+    WHEN FeedbackText LIKE '%good%' 
+      OR FeedbackText LIKE '%excellent%' 
+      ...
+    THEN 'Positive'
+    ELSE 'Negative'
+END AS Sentiment
+
+```
+### Group by Product and Sentiment
+```sql
+SELECT 
+    JSON_VALUE(Metadata, '$.device') AS Product,
+    Sentiment,
+    COUNT(*) AS FeedbackCount,
+    ROUND(AVG(CAST(Rating AS FLOAT)), 2) AS AvgRating
+FROM #FeedbackTemp
+GROUP BY Product, Sentiment;
+
+```
+### Group by Dynamic JSON Field
+```sql
+EXEC AggregateByField @Field = 'location';
+
+```
+
+## Indexing Strategy
+To optimize frequent filtering, aggregation, and search operations:
+- Clustered Index: FeedbackID
+- Non-Clustered Indexes:
+- Rating
+- CreatedDate + Rating + Metadata
+- CustomerID + CreatedDate (with includes)
+
+Indexes are created only if they don't already exist using IF NOT EXISTS logic

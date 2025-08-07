@@ -160,8 +160,8 @@ Indexes are created only if they don't already exist using IF NOT EXISTS logic
 
 ### Performance Tools
 Included:
-- sp_BlitzIndex – Identify missing or unused indexes
-- sp_BlitzCache – Detect slow-running queries
+- `sp_BlitzIndex` – Identify missing or unused indexes
+- `sp_BlitzCache` – Detect slow-running queries
 These scripts are available in the queries/ThirdParty_performancetuning.sql file.
 
 ### How to Run 
@@ -175,7 +175,6 @@ USE CustomerFeedback;
 3. Run create_tables.sql and insert_sample_data.sql
 4. Execute analysis and Group by scripts
 5. Review performance using sp_BlitzIndex and sp_BlitzCache
-
 ---
 
 ## Use Cases (Based on Project Requirements)
@@ -224,10 +223,22 @@ This project is designed to demonstrate practical and advanced SQL Server capabi
 - Documentation includes clear explanations of logic and transformation steps.
 - Easy for new developers or reviewers to understand and extend.
 ---
+
 ## Tools Used
 - SQL Server 2022
 - Git / GitHub
 - SQL Server Management Studio (SSMS)
 ---
+
+## CI/CD Deployment
+This project uses GitHub Actions to auto-deploy SQL database scripts to your target SQL Server (Azure SQL or On-Prem).
+
+### Prerequisites
+- Add the following repository secrets:
+  - `SQL_SERVER`
+  - `SQL_USER`
+  - `SQL_PASSWORD`
+  - `SQL_DATABASE`
+
 ## Author
 Abdul Samath

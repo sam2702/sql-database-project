@@ -1,0 +1,10 @@
+CustomerID,FeedbackText,Rating,CreatedDate,Metadata
+1,Excellent service and support_old,5,8/1/2025 10:00,"{""device"":""mobile"",""location"":""Chennai"",""browser"":""Chrome""}"
+2,Product quality was average Number,3,8/2/2025 14:30,"{""device"":""desktop"",""location"":""Mumbai"",""browser"":""Firefox""}"
+3,Delivery was delayed by two days,2,8/3/2025 9:15,"{""device"":""tablet"",""location"":""Delhi"",""browser"":""Safari""}"
+1,Really happy with the purchase,5,8/4/2025 18:20,"{""device"":""mobile"",""location"":""Hyderabad"",""browser"":""Edge""}"
+4,Item was damaged on arrival,1,8/5/2025 11:45,"{""device"":""desktop"",""location"":""Bangalore"",""browser"":""Chrome""}"
+5,Customer care helped quickly,4,8/6/2025 8:00,"{""device"":""mobile"",""location"":""Pune"",""browser"":""Opera""}"
+3,Worst quality,3,8/6/2025 16:10,"{""device"":""laptop"",""location"":""Kolkata"",""browser"":""Safari""}"
+5,Not upto the mark,3,8/6/2025 16:10,"{""device"":""laptop"",""location"":""Kolkata"",""browser"":""Safari""}"
+6,Very slow performance,3,8/6/2025 16:10,"{""device"":""laptop"",""location"":""Kolkata"",""browser"":""Safari""}"

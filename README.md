@@ -38,21 +38,54 @@ sql-database-project/
 - Optimize queries with smart indexing strategies
 - Integrate with [Brent Ozar’s](https://www.brentozar.com/) tools like `sp_BlitzIndex` and `sp_BlitzCache` for performance tuning.
 
-## Sample Analysis
+## Querying - Reporting
 
-### Sentiment Classification
-
+### Search feedbacks for keywords/phrases (Full-Text Search)
 ```sql
-CASE
-    WHEN FeedbackText LIKE '%good%' 
-      OR FeedbackText LIKE '%excellent%' 
-      ...
-    THEN 'Positive'
-    ELSE 'Negative'
-END AS Sentiment
+    SELECT 
+        FeedbackID,
+        CustomerID,
+        FeedbackText,
+        Rating,
+        JSON_VALUE(Metadata, '$.device') AS Product,
+        CreatedDate
+    FROM dbo.Feedbacks
+    WHERE CONTAINS(FeedbackText, @SearchPhrase);
 
 ```
-### Group by Product and Sentiment
+### Stored Procedure Logic: sp_SearchFeedbacks_ByKeyword
+```mermaid
+flowchart TD
+    A[Start: Execute sp_SearchFeedbacks_ByKeyword] --> B[Input: @SearchPhrase]
+    B --> C[Perform Full-Text Search on FeedbackText using CONTAINS]
+    C --> D[Extract JSON field 'device' as Product]
+    D --> E[Return FeedbackID, CustomerID, FeedbackText, Rating, Product, CreatedDate]
+    E --> F[End]
+
+```
+### Aggregate feedback by rating, product, or other JSON fields
+```sql
+EXEC dbo.usp_AggregateFeedbackByField @Field = 'rating';
+EXEC dbo.usp_AggregateFeedbackByField @Field = 'device';
+EXEC dbo.usp_AggregateFeedbackByField @Field = 'location';
+EXEC dbo.usp_AggregateFeedbackByField @Field = 'browser';
+
+```
+### Stored Procedure Logic: usp_AggregateFeedbackByField
+```mermaid
+flowchart TD
+    A[Start: Execute usp_AggregateFeedbackByField] --> B{Is @Field = 'rating'?}
+    B -- Yes --> C[Aggregate by Rating]
+    C --> D[Return status message for Rating]
+    B -- No --> E[Build JSON path from @Field]
+    E --> F[Build dynamic SQL using JSON_VALUE]
+    F --> G[Execute dynamic SQL]
+    G --> H[Return status message for JSON field]
+    D --> I[End]
+    H --> I 
+
+```
+### Filter/aggregate feedbacks by JSON metadata (e.g., product, sentiment)
 ```sql
 SELECT 
     JSON_VALUE(Metadata, '$.device') AS Product,
@@ -63,50 +96,20 @@ FROM #FeedbackTemp
 GROUP BY Product, Sentiment;
 
 ```
-### Group by Dynamic JSON Field
-```sql
-EXEC dbo.usp_AggregateFeedbackByField @Field = 'device';
-EXEC dbo.usp_AggregateFeedbackByField @Field = 'location';
-EXEC dbo.usp_AggregateFeedbackByField @Field = 'browser';
+### Stored Procedure Logic: sp_AggregateFeedbacks_By_MetadataAndSentiment
+```mermaid
+flowchart TD
+    A[Start: Execute sp_AggregateFeedbacks_By_MetadataAndSentiment] --> B[Extract device from JSON: Product]
+    B --> C[Classify Sentiment from FeedbackText]
+    C --> D[Store data in #FeedbackTemp]
+    D --> E{Apply Filters}
+    E -- Product/Sentiment Filter --> F[Group By Product, Sentiment]
+    F --> G[Calculate FeedbackCount and AvgRating]
+    G --> H[Return Result Set]
+    H --> I[Drop Temp Table]
+    I --> J[End]
 
 ```
-
-```mermaid
-erDiagram
-    Feedbacks {
-        INT FeedbackID PK
-        INT CustomerID FK
-        NVARCHAR FeedbackText
-        INT Rating
-        DATETIME CreatedDate
-        NVARCHAR Metadata
-    }
-
-    #FeedbackTemp {
-        INT FeedbackID
-        INT CustomerID
-        NVARCHAR FeedbackText
-        INT Rating
-        DATETIME CreatedDate
-        NVARCHAR Product
-        NVARCHAR Sentiment
-    }
-
-    Customers {
-        INT CustomerID PK
-        NVARCHAR Name
-        DATETIME CreatedDate
-        DATETIME ModifiedDate
-    }
-
-    Feedbacks ||--o{ Customers : "FK_CustomerID"
-    Feedbacks ||--o{ #FeedbackTemp : "Derived from"
-    #FeedbackTemp {
-        Product --> Extracted from Metadata.$.device
-        Sentiment --> Derived from FeedbackText keywords
-    }
-
-
 ### Indexing Strategy
 To optimize frequent filtering, aggregation, and search operations:
 #### Clustered Index: 
@@ -115,14 +118,12 @@ To optimize frequent filtering, aggregation, and search operations:
 - Rating
 - CreatedDate + Rating 
 - CustomerID + CreatedDate (with includes)
-
 Indexes are created only if they don't already exist using IF NOT EXISTS logic
 
 ### Performance Tools
 Included:
 - sp_BlitzIndex – Identify missing or unused indexes
 - sp_BlitzCache – Detect slow-running queries
-
 These scripts are available in the queries/ThirdParty_performancetuning.sql file.
 
 ### How to Run 
@@ -137,11 +138,9 @@ USE CustomerFeedback;
 4. Execute analysis and Group by scripts
 5. Review performance using sp_BlitzIndex and sp_BlitzCache
 
-
 ---
 
 ## Use Cases (Based on Project Requirements)
-
 This project is designed to demonstrate practical and advanced SQL Server capabilities aligned with real-world enterprise needs:
 
 ### 1. Search Feedbacks for Keywords/Phrases
@@ -186,18 +185,11 @@ This project is designed to demonstrate practical and advanced SQL Server capabi
 - Code is clean, commented, and readable.
 - Documentation includes clear explanations of logic and transformation steps.
 - Easy for new developers or reviewers to understand and extend.
-
 ---
-
 ## Tools Used
-
 - SQL Server 2022
 - Git / GitHub
 - SQL Server Management Studio (SSMS)
-
 ---
-
-
-## 👨‍💻 Author
-
+## Author
 Abdul Samath

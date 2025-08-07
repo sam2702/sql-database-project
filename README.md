@@ -89,7 +89,7 @@ Included:
 
 These scripts are available in the queries/ThirdParty_performancetuning.sql file.
 
-### How to Run !
+### How to Run 
 1. Open SSMS and connect to your SQL Server instance
 2. Create the database:
 
@@ -102,6 +102,66 @@ USE CustomerFeedback;
 5. Review performance using sp_BlitzIndex and sp_BlitzCache
 
 
-### Prepared by:
+---
+
+## Use Cases (Based on Project Requirements)
+
+This project is designed to demonstrate practical and advanced SQL Server capabilities aligned with real-world enterprise needs:
+
+### 1. Search Feedbacks for Keywords/Phrases
+- Utilize **Full-Text Search** for efficient retrieval of customer feedbacks containing specific keywords or phrases.
+- Enables quick identification of positive or negative sentiment based on text content.
+
+### 2. Filter and Aggregate Using JSON Metadata
+- Leverage `JSON_VALUE()` to extract fields (like `device`, `location`, etc.) from JSON metadata.
+- Enable dynamic filtering and grouping based on flexible metadata fields without schema changes.
+
+### 3. Aggregate Feedback by Rating, Product, or JSON Fields
+- Perform grouping and aggregation based on both traditional columns (like `Rating`) and JSON properties.
+- Useful for deriving high-level insights (e.g., average rating by product or location).
+
+### 4. Database Normalization and Indexing
+- Ensure normalized schema design with appropriate use of **clustered** and **non-clustered indexes**.
+- Avoid performance bottlenecks by indexing search and filter fields, including JSON-based access paths.
+
+### 5. Script Quality and Idempotency
+- Scripts follow **best practices** in terms of safety:
+  - `IF NOT EXISTS` conditions to avoid re-creation errors.
+  - Consistent naming and modular approach.
+  - Reusable stored procedures for dynamic analysis.
+
+### 6. Error Handling & Defensive SQL
+- Dynamic SQL is properly sanitized to avoid injection and syntax issues.
+- Error messages and execution statuses are returned clearly.
+
+### 7. Automation & DevOps Mindset
+- Ready for integration into DevOps pipelines:
+  - Organized folder structure
+  - Versioned scripts
+  - Reproducible from source control
+
+### 8. Query Performance and Clarity
+- Queries are written with:
+  - Clear structure and indentation
+  - Execution plans tested with `sp_BlitzCache`
+  - Index usage reviewed with `sp_BlitzIndex`
+
+### 9. Documentation & Code Readability
+- Code is clean, commented, and readable.
+- Documentation includes clear explanations of logic and transformation steps.
+- Easy for new developers or reviewers to understand and extend.
+
+---
+
+## Tools Used
+
+- SQL Server 2022
+- Git / GitHub
+- SQL Server Management Studio (SSMS)
+
+---
+
+
+## 👨‍💻 Author
+
 Abdul Samath
-Senior SQL Database Architect | Performance Tuning Expert

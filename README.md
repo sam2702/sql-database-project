@@ -71,6 +71,42 @@ EXEC dbo.usp_AggregateFeedbackByField @Field = 'browser';
 
 ```
 
+```mermaid
+erDiagram
+    Feedbacks {
+        INT FeedbackID PK
+        INT CustomerID FK
+        NVARCHAR FeedbackText
+        INT Rating
+        DATETIME CreatedDate
+        NVARCHAR Metadata
+    }
+
+    #FeedbackTemp {
+        INT FeedbackID
+        INT CustomerID
+        NVARCHAR FeedbackText
+        INT Rating
+        DATETIME CreatedDate
+        NVARCHAR Product
+        NVARCHAR Sentiment
+    }
+
+    Customers {
+        INT CustomerID PK
+        NVARCHAR Name
+        DATETIME CreatedDate
+        DATETIME ModifiedDate
+    }
+
+    Feedbacks ||--o{ Customers : "FK_CustomerID"
+    Feedbacks ||--o{ #FeedbackTemp : "Derived from"
+    #FeedbackTemp {
+        Product --> Extracted from Metadata.$.device
+        Sentiment --> Derived from FeedbackText keywords
+    }
+
+
 ### Indexing Strategy
 To optimize frequent filtering, aggregation, and search operations:
 #### Clustered Index: 

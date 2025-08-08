@@ -1,0 +1,28 @@
+name: CI/CD for SQL and PowerShell
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Run PowerShell scripts
+      run: |
+        Get-ChildItem -Path ./scripts -Filter *.ps1 | ForEach-Object {
+          Write-Host "Running $_"
+          pwsh $_.FullName
+        }
+
+    - name: Deploy SQL scripts
+      run: |
+        Get-ChildItem -Path ./sql -Filter *.sql | ForEach-Object {
+          Write-Host "Deploying $_"
+          sqlcmd -S ${{ secrets.DB_SERVER }} -U ${{ secrets.DB_USER }} -P ${{ secrets.DB_PASS }} -i $_.FullName
+        }

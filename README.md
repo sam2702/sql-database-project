@@ -7,25 +7,24 @@ Analyze customer feedback using T-SQL with fast queries, smart JSON parsing, and
 sql-database-project/
 │
 ├── ddl/
-│ ├── Customers.sql
-│ ├── Feedbacks.sql
-│ └── Staging_Feedbacks.sql
-├── dml/demo_data
-│ ├── feedback_data.csv
-│ ├── Generate_Feedback_Data_Powershell_Script.ps1
-│ ├── Insert_customers.sql
-│ └── Insert_feedbacks.sql
+│  ├── 1.Customers.sql
+│  ├── 2.Feedbacks.sql
+│  └── 3.Staging_Feedbacks.sql
 ├── fulltext/
-│ ├── Create_fulltext_catalog.sql
-│ └── Create_Index_Feedbacks.sql
+│  └── 4.Create_fulltext_catalog.sql
+│  dml/demo_data
+│  ├── 5.Insert_customers.sql
+│  ├── 6.Insert_feedbacks.sql
+│  ├── 7.feedback_data.csv
+│  ├── 8.Generate_Feedback_Data_Powershell_Script.ps1
 ├── indexes/
-│ └── Create_Index_Feedbacks.sql
+│  └── 9.Create_Index_Feedbacks.sql
 ├── procedures/
-│ ├── dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment.sql
-│ ├── dbo.sp_SearchFeedbacks_ByKeyword.sql
-│ └── dbo.usp_AggregateFeedbackByField.sql
+│  ├── 10.dbo.sp_AggregateFeedbacks_By_MetadataAndSentiment.sql
+│  ├── 11.dbo.sp_SearchFeedbacks_ByKeyword.sql
+│  └── 12.dbo.usp_AggregateFeedbackByField.sql
 ├── queries/
-│ └── External_Source_Performance_Tuning_queries.sql
+│  └── External_Source_Performance_Tuning_queries.sql
 ├── README.md
 
 ```
@@ -39,7 +38,6 @@ sql-database-project/
 - Integrate with [Brent Ozar’s](https://www.brentozar.com/) tools like `sp_BlitzIndex` and `sp_BlitzCache` for performance tuning.
 
 ## Querying - Reporting
-
 ### Search feedbacks for keywords/phrases (Full-Text Search)
 ```sql
     SELECT 
@@ -55,25 +53,24 @@ sql-database-project/
 ```
 ### Stored Procedure Logic: sp_SearchFeedbacks_ByKeyword
 ```mermaid
-flowchart TD
+flowchart LR
     A[Start: Execute sp_SearchFeedbacks_ByKeyword] --> B[Input: @SearchPhrase]
     B --> C[Perform Full-Text Search on FeedbackText using CONTAINS]
     C --> D[Extract JSON field 'device' as Product]
     D --> E[Return FeedbackID, CustomerID, FeedbackText, Rating, Product, CreatedDate]
     E --> F[End]
-
 ```
+
 ### Aggregate feedback by rating, product, or other JSON fields
 ```sql
 EXEC dbo.usp_AggregateFeedbackByField @Field = 'rating';
 EXEC dbo.usp_AggregateFeedbackByField @Field = 'device';
 EXEC dbo.usp_AggregateFeedbackByField @Field = 'location';
 EXEC dbo.usp_AggregateFeedbackByField @Field = 'browser';
-
 ```
 ### Stored Procedure Logic: usp_AggregateFeedbackByField
 ```mermaid
-flowchart TD
+flowchart LR
     A[Start: Execute usp_AggregateFeedbackByField] --> B{Is @Field = 'rating'?}
     B -- Yes --> C[Aggregate by Rating]
     C --> D[Return status message for Rating]
@@ -83,8 +80,9 @@ flowchart TD
     G --> H[Return status message for JSON field]
     D --> I[End]
     H --> I 
-
 ```
+
+
 ### Filter/aggregate feedbacks by JSON metadata (e.g., product, sentiment)
 ```sql
 SELECT 
@@ -94,11 +92,10 @@ SELECT
     ROUND(AVG(CAST(Rating AS FLOAT)), 2) AS AvgRating
 FROM #FeedbackTemp
 GROUP BY Product, Sentiment;
-
 ```
 ### Stored Procedure Logic: sp_AggregateFeedbacks_By_MetadataAndSentiment
 ```mermaid
-flowchart TD
+flowchart TB
     A[Start: Execute sp_AggregateFeedbacks_By_MetadataAndSentiment] --> B[Extract device from JSON: Product]
     B --> C[Classify Sentiment from FeedbackText]
     C --> D[Store data in #FeedbackTemp]
@@ -109,6 +106,7 @@ flowchart TD
     H --> I[Drop Temp Table]
     I --> J[End]
 ```
+
 ### Import feedback data from CSV/JSON into the database
 ```mermaid
 erDiagram
@@ -131,23 +129,35 @@ erDiagram
 
     Staging_Feedbacks ||--o{ Feedbacks : deduplicated_merge
 ```
-### PowerShell ETL Flowchart
+
+### PowerShell Script Flowchart
 ```mermaid
-flowchart TD
-    A[Start ETL Script] --> B[Set Configuration Variables]
-    B --> C[Load CSV file]
-    C --> D{Is data loaded?}
-    D -- No --> X[Log: No data found, Exit]
+flowchart TB
+    A[Start PS Script] --> B[Set Configuration Variables]
+    B --> C[Load CSV File]
+    C --> D{Is Data Loaded?}
+    D -- No --> X[Log: No data found → Exit]
     D -- Yes --> E[Open SQL DB Connection]
-    E --> F[Loop over each row]
-    F --> G[Insert into Staging_Feedbacks]
-    G --> H[Log total rows inserted]
-    H --> I[Merge Staging_Feedbacks into Feedbacks -deduplication]
-    I --> J[Log inserted count]
+    E --> F[Loop Through Each Row]
+    F --> G[Insert Row into Staging_Feedbacks]
+    G --> H[Log Total Rows Inserted]
+    H --> I[Merge Staging_Feedbacks → Feedbacks Deduplication]
+    I --> J[Log Inserted Count]
     J --> K[Truncate Staging_Feedbacks]
-    K --> Z[Close DB Connection, End]
+    K --> Z[Close DB Connection → End]
+
+    %% Assign classes to nodes
+    class A,B,C,E,F,G,H,I,J,K setup;
+    class D decision;
+    class X,Z exit;
+
+    %% Define styles with black text
+    classDef setup fill:#d0e6ff,stroke:#007acc,stroke-width:2px,color:#000000;
+    classDef decision fill:#fff3cd,stroke:#ff9800,stroke-width:2px,color:#000000;
+    classDef exit fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000000;
 
 ```
+
 ### Indexing Strategy
 To optimize frequent filtering, aggregation, and search operations:
 #### Clustered Index: 

@@ -160,31 +160,33 @@ flowchart TB
 
 ### Indexing Strategy
 To optimize frequent filtering, aggregation, and search operations:
-#### Clustered Index: 
-- FeedbackID
-#### Non-Clustered Indexes:
-- Rating
-- CreatedDate + Rating 
-- CustomerID + CreatedDate (with includes)
+1. **Clustered Index:** 
+    - FeedbackID
+2. **Non-Clustered Indexes:**
+    - Rating
+    - CreatedDate + Rating 
+    - CustomerID + CreatedDate (with includes)
+
 Indexes are created only if they don't already exist using IF NOT EXISTS logic
 
 ### Performance Tools
-Included:
-- `sp_BlitzIndex` – Identify missing or unused indexes
-- `sp_BlitzCache` – Detect slow-running queries
+1. **Included:**
+    - `sp_BlitzIndex` – Identify missing or unused indexes
+    - `sp_BlitzCache` – Detect slow-running queries
+      
 These scripts are available in the queries/ThirdParty_performancetuning.sql file.
 
 ### How to Run 
-1. Open SSMS and connect to your SQL Server instance
-2. Create the database:
+    1. Open SSMS and connect to your SQL Server instance
+    2. Create the database:
 
 ```sql
 CREATE DATABASE CustomerFeedback;
 USE CustomerFeedback;
 ```
-3. Run create_tables.sql and insert_sample_data.sql
+3. Run ddl, dml, fulltext folder scripts 
 4. Execute analysis and Group by scripts
-5. Review performance using sp_BlitzIndex and sp_BlitzCache
+5. Review stored procedures performance using `sp_BlitzIndex` and `sp_BlitzCache`
 ---
 
 ## Use Cases (Based on Project Requirements)

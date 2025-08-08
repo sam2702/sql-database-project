@@ -16,17 +16,25 @@ jobs:
 
     - name: Validate PowerShell scripts
       run: |
-        Get-ChildItem -Path ./scripts -Filter *.ps1 | ForEach-Object {
-          Write-Host "Testing $_"
-          pwsh -Command "Test-ModuleManifest $_.FullName"  
+        Get-ChildItem -Path "${{ github.workspace }}/scripts" -Filter *.ps1 | ForEach-Object {
+          Write-Host "Running $($_.Name)"
+          pwsh $_.FullName 
         }
-
+    
     - name: Validate SQL scripts
       run: |
-        Get-ChildItem -Path ./sql -Filter *.sql | ForEach-Object {
-          Write-Host "Checking SQL syntax for $_"
-          sqlcmd -S ${{ secrets.DB_SERVER }} -U ${{ secrets.DB_USER }} -P ${{ secrets.DB_PASS }} -i $_.FullName -b
-        }
+        $sqlPath = "${{ github.workspace }}/ddl/v1.0"
+        Get-ChildItem -Path $sqlPath -Filter *.sql | ForEach-Object {
+          Write-Host "Checking SQL syntax for $($_.Name)"
+          try {
+            sqlcmd -S "${{ secrets.DB_SERVER }}" -U "${{ secrets.DB_USER }}" -P "${{ secrets.DB_PASS }}" -i $_.FullName -b
+            Write-Host "$($_.Name) passed syntax check."
+          } catch {
+            Write-Host "Syntax error in $($_.Name): $_"
+            exit 1
+            }
+          }
+        
 
   deploy:
     name: Deploy Scripts

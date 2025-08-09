@@ -5,7 +5,7 @@
 # CONFIGURATION
 $ServerName   = "DESKTOP-B9QVPPE"
 $DatabaseName = "CustomerFeedback"
-$InputFile    = "D:\CustomerFeedbackAnalytics\feedback_data.csv"
+$InputFile    = "D:\sql-database-project\sql-database-project/dml/demo_data/feedback_data.csv"   #"D:\CustomerFeedbackAnalytics\feedback_data.csv"
 $LogFile      = "etl_log.txt"
 
 

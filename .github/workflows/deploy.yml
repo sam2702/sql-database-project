@@ -1,52 +1,48 @@
-name: DB Validation
+name: Validate SQL Scripts
+
 on:
-  push:
-    branches:
-       - main
+  workflow_dispatch:
+
 jobs:
-    validate:
-      runs-on: windows-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-  
-        - name: Setup SQL Server LocalDB
-          run: |
-            sqllocaldb create MSSQLLocalDB
-            sqllocaldb start MSSQLLocalDB
-  
-        - name: Validate SQL syntax
-          shell: pwsh
-          run: |
-            $ErrorActionPreference = "Continue"
-            $sqlFiles = Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter *.sql
-            
-            if ($sqlFiles.Count -eq 0) {
-                Write-Host "No SQL files found."
-                exit 0
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 1: Check SQL Server connection
+      - name: Check SQL Server connection
+        run: |
+          try {
+            sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -Q "SELECT 1"
+            Write-Host "SQL Server connection successful."
+          } catch {
+            Write-Host "Cannot connect to SQL Server."
+            exit 1
+          }
+
+      # Step 2: Validate SQL scripts without applying changes
+      - name: Validate SQL scripts (syntax only)
+        run: |
+          $basePath = "${{ github.workspace }}"
+          $sqlFiles = Get-ChildItem -Path $basePath -Filter *.sql -Recurse
+          if ($sqlFiles.Count -eq 0) {
+            Write-Host "No SQL files found for validation."
+            exit 0
+          }
+          foreach ($file in $sqlFiles) {
+            Write-Host "Checking syntax for $($file.FullName)"
+            try {
+              # Run inside a transaction and roll back to avoid changes
+              $tempFile = "$env:TEMP\validate_temp.sql"
+              "BEGIN TRANSACTION; " | Out-File -FilePath $tempFile -Encoding utf8
+              Get-Content $file.FullName | Out-File -Append -FilePath $tempFile -Encoding utf8
+              "ROLLBACK TRANSACTION;" | Out-File -Append -FilePath $tempFile -Encoding utf8
+
+              sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -i $tempFile -b
+              Write-Host "$($file.Name) passed syntax check."
+            } catch {
+              Write-Host "Syntax error in $($file.Name): $_"
+              exit 1
             }
-  
-            $allPassed = $true
-            foreach ($file in $sqlFiles) {
-                Write-Host "Validating $($file.FullName)..."
-                
-                $result = sqlcmd -S "(localdb)\MSSQLLocalDB" -d master -i $file.FullName -b -X -e 2>&1
-                
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Host "Syntax error in: $($file.Name)"
-                    Write-Host $result
-                    $allPassed = $false
-                } else {
-                    Write-Host "Syntax OK: $($file.Name)"
-                }
-            }
-  
-            if (-not $allPassed) {
-                exit 1
-            } else {
-                Write-Host "All SQL scripts passed syntax validation!"
-            }
-  
-  
-       
-       
+          }

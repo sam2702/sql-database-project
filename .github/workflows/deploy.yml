@@ -1,56 +1,55 @@
-name: SQL Project Automation
+name: Validate and Deploy SQL Scripts
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  validate-and-deploy:
+  validate_and_deploy:
     runs-on: windows-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find and Validate SQL Scripts
-        shell: pwsh
+      - name: Validate SQL scripts (all folders)
         run: |
-          $folders = Get-ChildItem -Path "${{ github.workspace }}" -Directory -Recurse |
-                     Where-Object { Test-Path "$($_.FullName)\*.sql" }
+          $sqlFiles = Get-ChildItem -Path "${{ github.workspace }}" -Filter *.sql -Recurse
+          if (-not $sqlFiles) {
+            Write-Host "No SQL files found."
+            exit 0
+          }
 
-          foreach ($folder in $folders) {
-            Write-Host "Checking folder: $($folder.FullName)"
-            $sqlFiles = Get-ChildItem -Path $folder.FullName -Filter *.sql
-            foreach ($file in $sqlFiles) {
-              Write-Host "Validating SQL syntax for $($file.Name)"
-              try {
-                sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -i $file.FullName -b
-                Write-Host "$($file.Name) passed syntax check."
-              }
-              catch {
-                Write-Host "Could not validate $($file.Name). SQL Server might be unavailable."
-              }
+          foreach ($file in $sqlFiles) {
+            Write-Host "Checking SQL syntax for $($file.FullName)"
+            try {
+              sqlcmd -S "${{ secrets.SQL_SERVER }}" `
+                     -U "${{ secrets.SQL_USER }}" `
+                     -P "${{ secrets.SQL_PASSWORD }}" `
+                     -i $file.FullName -b
+              Write-Host "$($file.Name) passed syntax check."
+            } catch {
+              Write-Host "Syntax error in $($file.Name)"
+              exit 1
             }
           }
 
-      - name: Deploy SQL Scripts
-        if: ${{ always() }} # Runs even if validation skipped
-        shell: pwsh
+      - name: Deploy SQL scripts (all folders)
+        if: success()
         run: |
-          $folders = Get-ChildItem -Path "${{ github.workspace }}" -Directory -Recurse |
-                     Where-Object { Test-Path "$($_.FullName)\*.sql" }
-
-          foreach ($folder in $folders) {
-            Write-Host "Deploying scripts in folder: $($folder.FullName)"
-            $sqlFiles = Get-ChildItem -Path $folder.FullName -Filter *.sql
-            foreach ($file in $sqlFiles) {
-              Write-Host "Executing $($file.Name)"
-              try {
-                sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -i $file.FullName -b
-              }
-              catch {
-                Write-Host "Failed to deploy $($file.Name). SQL Server might be unavailable."
-              }
+          $sqlFiles = Get-ChildItem -Path "${{ github.workspace }}" -Filter *.sql -Recurse
+          foreach ($file in $sqlFiles) {
+            Write-Host "Deploying $($file.FullName)"
+            try {
+              sqlcmd -S "${{ secrets.SQL_SERVER }}" `
+                     -U "${{ secrets.SQL_USER }}" `
+                     -P "${{ secrets.SQL_PASSWORD }}" `
+                     -i $file.FullName -b
+              Write-Host "$($file.Name) deployed successfully."
+            } catch {
+              Write-Host "Failed to deploy $($file.Name)"
+              exit 1
             }
           }

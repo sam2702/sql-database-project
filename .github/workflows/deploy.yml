@@ -23,18 +23,20 @@ jobs:
     
     - name: Validate SQL scripts
       run: |
-        $sqlPath = "${{ github.workspace }}/ddl/v1.0"
-        Get-ChildItem -Path $sqlPath -Filter *.sql | ForEach-Object {
-          Write-Host "Checking SQL syntax for $($_.Name)"
+        $rootPath = "${{ github.workspace }}"
+        Get-ChildItem -Path $rootPath -Filter *.sql -Recurse | Sort-Object FullName | ForEach-Object {
+          Write-Host "Checking SQL syntax for $($_.FullName)"
           try {
-            sqlcmd -S "${{ secrets.DB_SERVER }}" -U "${{ secrets.DB_USER }}" -P "${{ secrets.DB_PASS }}" -i $_.FullName -b
+            sqlcmd -S "${{ secrets.SQL_SERVER }}" `
+                   -U "${{ secrets.SQL_USER }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -i $_.FullName -b
             Write-Host "$($_.Name) passed syntax check."
           } catch {
             Write-Host "Syntax error in $($_.Name): $_"
             exit 1
-            }
           }
-        
+        }        
 
   deploy:
     name: Deploy Scripts
@@ -45,16 +47,36 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Run PowerShell scripts
+    - name: Deploy SQL scripts from single folder
       run: |
-        Get-ChildItem -Path ./scripts -Filter *.ps1 | ForEach-Object {
-          Write-Host "Running $_"
-          pwsh $_.FullName
+        $sqlPath = "${{ github.workspace }}/dml/demo_data"
+        Get-ChildItem -Path $sqlPath -Filter *.sql | ForEach-Object {
+          Write-Host "Deploying $($_.FullName)"
+          try {
+            sqlcmd -S "${{ secrets.SQL_SERVER }}" `
+                   -U "${{ secrets.SQL_USER }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -i $_.FullName -b
+            Write-Host "$($_.Name) deployed successfully."
+          } catch {
+            Write-Host "Deployment failed for $($_.Name): $_"
+            exit 1
+          }
         }
 
     - name: Deploy SQL scripts
       run: |
-        Get-ChildItem -Path ./sql -Filter *.sql | ForEach-Object {
-          Write-Host "Deploying $_"
-          sqlcmd -S ${{ secrets.DB_SERVER }} -U ${{ secrets.DB_USER }} -P ${{ secrets.DB_PASS }} -i $_.FullName
-        }
+        $rootPath = "${{ github.workspace }}"
+        Get-ChildItem -Path $rootPath -Filter *.sql -Recurse | Sort-Object FullName | ForEach-Object {
+          Write-Host "Deploying $($_.FullName)"
+            try {
+              sqlcmd -S "${{ secrets.SQL_SERVER }}" `
+                 -U "${{ secrets.SQL_USER }}" `
+                 -P "${{ secrets.SQL_PASSWORD }}" `
+                 -i $_.FullName -b
+              Write-Host "$($_.Name) passed syntax check."
+            } catch {
+                Write-Host "Syntax error in $($_.Name): $_"
+                exit 1
+              }
+            }

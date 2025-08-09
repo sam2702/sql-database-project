@@ -1,66 +1,52 @@
-name: DB Validation and Deployment
-
+name: DB Validation
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
-
-env:
-  SQL_SERVER: localhost
-  SQL_USER: abdul
-  SQL_PASSWORD: Abdul@100
-  SQL_DB: CustomerFeedback
-
+       - main
 jobs:
-  deploy:
-    runs-on: self-hosted  # Change to 'windows-latest' if using GitHub-hosted
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Find all SQL files
-        id: find_sql
-        run: |
-          $files = Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter *.sql
-          if ($files.Count -eq 0) {
-              Write-Host "No SQL files found."
-              exit 0
-          }
-          Write-Host "Found $($files.Count) SQL files."
-
-      - name: Validate SQL syntax (offline)
-        run: |
-          $ErrorActionPreference = "Continue"
-          Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter *.sql | ForEach-Object {
-              Write-Host "Validating $($_.FullName)..."
-              # Basic syntax check by attempting parse without execution
-              $content = Get-Content $_.FullName -Raw
-              if ($content.Trim().Length -eq 0) {
-                  Write-Host "Empty SQL file: $($_.FullName)"
-              }
-              else {
-                  Write-Host "Syntax looks okay for $($_.Name)"
-              }
-          }
-
-      - name: Check SQL Server connection
-        id: check_sql
-        run: |
-          try {
-              sqlcmd -S $env:SQL_SERVER -U $env:SQL_USER -P $env:SQL_PASSWORD -d $env:SQL_DB -Q "SELECT 1"
-              echo "connection=success" >> $env:GITHUB_OUTPUT
-              Write-Host "SQL Server connection successful."
-          }
-          catch {
-              echo "connection=failure" >> $env:GITHUB_OUTPUT
-              Write-Host "SQL Server connection failed. Skipping deployment."
-          }
-
-      - name: Deploy SQL scripts
-        if: steps.check_sql.outputs.connection == 'success'
-        run: |
-          Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter *.sql | ForEach-Object {
-              Write-Host "Deploying $($_.FullName) to $env:SQL_DB..."
-              sqlcmd -S $env:SQL_SERVER -U $env:SQL_USER -P $env:SQL_PASSWORD -d $env:SQL_DB -i $_.FullName
-          }
+    validate:
+      runs-on: windows-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+  
+        - name: Setup SQL Server LocalDB
+          run: |
+            sqllocaldb create MSSQLLocalDB
+            sqllocaldb start MSSQLLocalDB
+  
+        - name: Validate SQL syntax
+          shell: pwsh
+          run: |
+            $ErrorActionPreference = "Continue"
+            $sqlFiles = Get-ChildItem -Path "${{ github.workspace }}" -Recurse -Filter *.sql
+            
+            if ($sqlFiles.Count -eq 0) {
+                Write-Host "No SQL files found."
+                exit 0
+            }
+  
+            $allPassed = $true
+            foreach ($file in $sqlFiles) {
+                Write-Host "Validating $($file.FullName)..."
+                
+                $result = sqlcmd -S "(localdb)\MSSQLLocalDB" -d master -i $file.FullName -b -X -e 2>&1
+                
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "Syntax error in: $($file.Name)"
+                    Write-Host $result
+                    $allPassed = $false
+                } else {
+                    Write-Host "Syntax OK: $($file.Name)"
+                }
+            }
+  
+            if (-not $allPassed) {
+                exit 1
+            } else {
+                Write-Host "All SQL scripts passed syntax validation!"
+            }
+  
+  
+       
+       

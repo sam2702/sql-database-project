@@ -16,7 +16,7 @@ jobs:
 
     - name: Validate PowerShell scripts
       run: |
-        Get-ChildItem -Path "${{ github.workspace }}/scripts" -Filter *.ps1 | ForEach-Object {
+        Get-ChildItem -Path "${{ github.workspace }}/dml/demo_data" -Filter *.ps1 | ForEach-Object {
           Write-Host "Running $($_.Name)"
           pwsh $_.FullName 
         }

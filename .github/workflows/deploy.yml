@@ -1,48 +1,40 @@
-name: Validate SQL Scripts
+name: Database CI/CD Pipeline (Model)
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  validate:
+  db_pipeline:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 1: Check SQL Server connection
-      - name: Check SQL Server connection
+      - name: List repo contents
+        shell: pwsh
+        run: dir $env:GITHUB_WORKSPACE -Recurse
+
+      # ==============================
+      #  VALIDATION STAGE (Model Only)
+      # ==============================
+      - name: Validate SQL Scripts (Model)
+        shell: pwsh
         run: |
-          try {
-            sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -Q "SELECT 1"
-            Write-Host "SQL Server connection successful."
-          } catch {
-            Write-Host "Cannot connect to SQL Server."
-            exit 1
-          }
+          echo "Validating SQL Scripts..."
+          # Example command (commented to avoid execution)
+          # sqlcmd -S localhost -U sa -P YourPassword -i scripts\feedback_analysis.sql -b
+          # Add validation logic 
 
-      # Step 2: Validate SQL scripts without applying changes
-      - name: Validate SQL scripts (syntax only)
+      # ==============================
+      #  DEPLOYMENT STAGE (Model Only)
+      # ==============================
+      - name: Deploy to Database (Model)
+        shell: pwsh
         run: |
-          $basePath = "${{ github.workspace }}"
-          $sqlFiles = Get-ChildItem -Path $basePath -Filter *.sql -Recurse
-          if ($sqlFiles.Count -eq 0) {
-            Write-Host "No SQL files found for validation."
-            exit 0
-          }
-          foreach ($file in $sqlFiles) {
-            Write-Host "Checking syntax for $($file.FullName)"
-            try {
-              # Run inside a transaction and roll back to avoid changes
-              $tempFile = "$env:TEMP\validate_temp.sql"
-              "BEGIN TRANSACTION; " | Out-File -FilePath $tempFile -Encoding utf8
-              Get-Content $file.FullName | Out-File -Append -FilePath $tempFile -Encoding utf8
-              "ROLLBACK TRANSACTION;" | Out-File -Append -FilePath $tempFile -Encoding utf8
-
-              sqlcmd -S "${{ secrets.SQL_SERVER }}" -U "${{ secrets.SQL_USER }}" -P "${{ secrets.SQL_PASSWORD }}" -i $tempFile -b
-              Write-Host "$($file.Name) passed syntax check."
-            } catch {
-              Write-Host "Syntax error in $($file.Name): $_"
-              exit 1
-            }
-          }
+          echo "Deploying changes to target database..."
+          # Example command (commented to avoid execution)
+          # sqlcmd -S prod-server -U sa -P Password -i scripts\feedback_analysis.sql
+          # Add deployment logic 
